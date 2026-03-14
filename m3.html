@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chatterbox</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #0a0a0a;
+  --surface:  #111111;
+  --s2:       #181818;
+  --s3:       #222222;
+  --border:   #2a2a2a;
+  --accent:   #00e676;
+  --accent2:  #00c853;
+  --accentD:  #00391a;
+  --accentDim:#00e67622;
+  --red:      #ff4444;
+  --text:     #e8e8e8;
+  --text2:    #888888;
+  --text3:    #444444;
+  --self-bg:  #003d1a;
+  --self-brd: #00e676;
+  --font:     'Inter', sans-serif;
+  --rad:      12px;
+  --shadow:   0 2px 12px rgba(0,230,118,0.06);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+
+/* ═══════════════════════════
+   JOIN SCREEN
+═══════════════════════════ */
+#joinScreen{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  z-index:200;
+  background:radial-gradient(ellipse at 50% 30%, #001a0d 0%, #0a0a0a 70%);
+}
+.jcard{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:42px 38px;width:420px;
+  box-shadow:0 0 60px rgba(0,230,118,0.08), var(--shadow-lg);
+  animation:su 0.4s ease;
+  position:relative;overflow:hidden;
+}
+.jcard::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,230,118,0.06) 0%,transparent 70%);
+  pointer-events:none;
+}
+@keyframes su{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.jlogo{text-align:center;margin-bottom:32px}
+.jlogo .icon{font-size:48px;display:block;margin-bottom:10px}
+.jlogo h1{font-size:26px;font-weight:700;color:var(--accent);letter-spacing:-0.5px}
+.jlogo p{color:var(--text2);font-size:13px;margin-top:4px}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+.fg input,.fg select{
+  width:100%;padding:11px 14px;
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);
+  font-family:var(--font);font-size:14px;outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.fg input:focus,.fg select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentDim)}
+.fg select option{background:var(--s2)}
+#connSt{font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:12px;text-align:center;display:none}
+#connSt.connecting{background:rgba(255,193,7,0.1);color:#ffc107;border:1px solid rgba(255,193,7,0.25)}
+#connSt.connected{background:rgba(0,230,118,0.1);color:var(--accent);border:1px solid rgba(0,230,118,0.25)}
+#connSt.error{background:rgba(255,68,68,0.1);color:var(--red);border:1px solid rgba(255,68,68,0.25)}
+#jErr{color:var(--red);font-size:12px;margin-bottom:10px;padding:8px 12px;background:rgba(255,68,68,0.08);border-radius:8px;border:1px solid rgba(255,68,68,0.2);display:none}
+#joinBtn{
+  width:100%;padding:13px;
+  background:var(--accent);border:none;border-radius:10px;
+  color:#000;font-family:var(--font);font-size:15px;font-weight:700;
+  cursor:pointer;transition:all 0.2s;letter-spacing:0.3px;
+  box-shadow:0 4px 20px rgba(0,230,118,0.3);
+}
+#joinBtn:hover:not(:disabled){background:var(--accent2);transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,230,118,0.4)}
+#joinBtn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* ═══════════════════════════
+   APP LAYOUT
+═══════════════════════════ */
+#app{display:none;height:100vh;flex-direction:row}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:248px;min-width:248px;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;height:100vh;
+}
+.sb-top{padding:16px 14px 14px;border-bottom:1px solid var(--border)}
+.sb-brand{
+  font-size:16px;font-weight:700;color:var(--accent);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;
+  letter-spacing:-0.3px;
+}
+.sb-me{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;background:var(--accentDim);border-radius:10px;
+  border:1px solid rgba(0,230,118,0.15);
+}
+.av{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:15px;color:#000;flex-shrink:0;
+}
+.me-n{font-size:14px;font-weight:600;color:var(--text)}
+.me-s{font-size:11px;color:var(--accent);display:flex;align-items:center;gap:4px;margin-top:2px;font-weight:500}
+.me-s::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;box-shadow:0 0 6px var(--accent)}
+.sb-room-tag{
+  margin:12px 14px 0;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 12px;background:var(--accentDim);
+  border:1px solid rgba(0,230,118,0.2);border-radius:20px;
+  font-size:12px;font-weight:600;color:var(--accent);
+}
+.sb-sec{padding:14px 14px 6px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;gap:6px}
+.sb-cnt{background:var(--accent);color:#000;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px}
+.ol-list{flex:1;overflow-y:auto;padding:4px 6px 6px}
+.ol-list::-webkit-scrollbar{width:3px}
+.ol-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.ou{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;margin-bottom:1px;transition:background 0.15s;cursor:default}
+.ou:hover{background:var(--s2)}
+.ou-av{
+  width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#000;flex-shrink:0;position:relative;
+}
+.ou-av::after{content:'';position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);box-shadow:0 0 5px var(--accent)}
+.ou-info .ou-n{font-size:13px;color:var(--text)}
+.ou-info .ou-you{font-size:10px;color:var(--accent);font-weight:600}
+#leaveBtn{
+  margin:8px;padding:10px;
+  background:rgba(255,68,68,0.07);border:1px solid rgba(255,68,68,0.2);
+  border-radius:10px;color:var(--red);
+  font-family:var(--font);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+#leaveBtn:hover{background:rgba(255,68,68,0.14);border-color:rgba(255,68,68,0.4)}
+
+/* ── CHAT AREA ── */
+#chatArea{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--bg)}
+.chat-hdr{
+  padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 1px 0 var(--border);
+}
+.hdr-icon{font-size:20px}
+.hdr-t{font-size:15px;font-weight:700;color:var(--text)}
+.hdr-d{font-size:12px;color:var(--text2);margin-top:1px}
+.hdr-online{
+  margin-left:auto;font-size:12px;color:var(--accent);font-weight:600;
+  background:var(--accentDim);padding:4px 12px;border-radius:20px;
+  border:1px solid rgba(0,230,118,0.2);
+}
+
+/* ── WELCOME BANNER ── */
+#welcomeBanner{
+  display:none;position:relative;text-align:center;
+  padding:32px 24px 26px;
+  background:linear-gradient(180deg,#001a0d 0%,transparent 100%);
+  border-bottom:1px solid rgba(0,230,118,0.15);
+  animation:wbIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  overflow:hidden;
+}
+@keyframes wbIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+#welcomeBanner::after{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:300px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);
+}
+.wb-emoji{font-size:44px;display:block;margin-bottom:10px;animation:bounce 0.5s 0.1s ease both}
+@keyframes bounce{0%{transform:scale(0.3);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.wb-name{font-size:34px;font-weight:700;color:var(--accent);letter-spacing:-1px;text-shadow:0 0 30px rgba(0,230,118,0.4)}
+.wb-room{font-size:15px;color:var(--text2);margin-top:8px}
+.wb-room strong{color:var(--accent)}
+.wb-dismiss{
+  display:inline-block;margin-top:16px;
+  font-size:12px;color:var(--text3);cursor:pointer;
+  padding:5px 16px;border-radius:20px;
+  border:1px solid var(--border);background:var(--s2);
+  transition:all 0.15s;font-weight:500;
+}
+.wb-dismiss:hover{border-color:var(--accent);color:var(--accent);background:var(--accentDim)}
+
+/* Others joining banner */
+#joinBanner{
+  display:none;padding:10px 20px;
+  background:var(--accentDim);border-bottom:1px solid rgba(0,230,118,0.15);
+  animation:fadeIn 0.3s ease;text-align:center;
+}
+.jb-big{font-size:13px;font-weight:600;color:var(--accent)}
+.jb-sub{font-size:11px;color:var(--text2);margin-top:2px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* ── MESSAGES ── */
+#msgs{flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;scroll-behavior:smooth}
+#msgs-inner{margin-top:auto;display:flex;flex-direction:column;gap:2px;width:100%}
+#msgs::-webkit-scrollbar{width:4px}
+#msgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.datediv{text-align:center;font-size:11px;color:var(--text3);padding:10px 0;margin:6px 0}
+.datediv span{background:var(--s2);border:1px solid var(--border);padding:3px 12px;border-radius:8px}
+.sysmsg{
+  text-align:center;font-size:12px;color:var(--text2);
+  padding:4px 14px;margin:4px auto;
+  background:var(--s2);border-radius:8px;max-width:80%;
+  animation:fadeIn 0.3s;border:1px solid var(--border);
+}
+.mrow{display:flex;flex-direction:column;margin-bottom:4px;animation:mi 0.2s ease}
+@keyframes mi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.mrow.self{align-items:flex-end}
+.mrow.other{align-items:flex-start}
+.msender{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:3px;padding:0 4px}
+.mrow.self .msender{display:none}
+.rpreview{
+  background:rgba(0,230,118,0.06);border-left:2px solid var(--accent);
+  padding:4px 10px;border-radius:4px;margin-bottom:4px;
+  font-size:12px;color:var(--text2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;
+}
+.rpreview strong{color:var(--accent)}
+.mrow.self .rpreview{background:rgba(0,230,118,0.08);color:rgba(232,232,232,0.7)}
+.bwrap{display:flex;align-items:flex-end;gap:6px}
+.mrow.self .bwrap{flex-direction:row-reverse}
+.bubble{
+  max-width:380px;padding:9px 13px;
+  border-radius:14px;font-size:14px;line-height:1.55;
+  word-break:break-word;position:relative;cursor:pointer;
+}
+.mrow.self .bubble{
+  background:var(--self-bg);color:var(--text);
+  border:1px solid rgba(0,230,118,0.25);
+  border-bottom-right-radius:3px;
+  box-shadow:0 0 12px rgba(0,230,118,0.06);
+}
+.mrow.other .bubble{
+  background:var(--s2);color:var(--text);
+  border:1px solid var(--border);
+  border-bottom-left-radius:3px;
+}
+.bfoot{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:4px}
+.btime{font-size:10px;color:var(--text3)}
+.bticks.sent{font-size:11px;color:var(--text3)}
+.bticks.seen{font-size:11px;color:var(--accent)}
+.epick{
+  display:none;position:absolute;bottom:calc(100% + 8px);
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:12px;padding:8px;gap:4px;flex-wrap:wrap;
+  box-shadow:var(--shadow-lg);z-index:50;width:max-content;
+}
+.mrow.self .epick{right:0}
+.mrow.other .epick{left:0}
+.epick.open{display:flex}
+.epick .eb{font-size:20px;cursor:pointer;padding:4px 6px;border-radius:8px;border:none;background:none;transition:background 0.15s}
+.epick .eb:hover{background:var(--s3)}
+.rxns{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;padding:0 4px}
+.rpill{
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:20px;padding:2px 8px;font-size:12px;
+  cursor:pointer;display:flex;align-items:center;gap:4px;
+  user-select:none;transition:all 0.15s;
+}
+.rpill:hover{border-color:var(--accent);background:var(--accentDim)}
+.rpill.mine{border-color:var(--accent);background:var(--accentDim)}
+.rpill .cnt{font-size:11px;color:var(--text2)}
+#ctxMenu{
+  display:none;position:fixed;z-index:300;
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:10px;padding:5px;min-width:160px;
+  box-shadow:var(--shadow-lg);animation:fadeIn 0.1s ease;
+}
+#ctxMenu .ci{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--text);transition:background 0.1s}
+#ctxMenu .ci:hover{background:var(--s3);color:var(--accent)}
+#ctxMenu .ci .ci-icon{font-size:15px}
+
+/* ── TYPING INDICATOR ── */
+#typingBar{
+  min-height:36px;flex-shrink:0;
+  padding:4px 20px;
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg);
+}
+.typing-bubble{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:12px;border-bottom-left-radius:3px;
+  padding:6px 14px;
+  animation:fadeIn 0.15s ease;
+}
+.dots{display:flex;align-items:center;gap:3px}
+.dots span{
+  display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--accent);
+  animation:bdot 1.2s ease-in-out infinite;
+  box-shadow:0 0 4px var(--accent);
+}
+.dots span:nth-child(2){animation-delay:.16s}
+.dots span:nth-child(3){animation-delay:.32s}
+@keyframes bdot{
+  0%,60%,100%{transform:translateY(0);opacity:0.25}
+  30%{transform:translateY(-4px);opacity:1}
+}
+.typing-name{font-size:12px;color:var(--text2);font-style:italic}
+.typing-name strong{color:var(--accent);font-style:normal}
+
+/* ── REPLY BAR ── */
+#replyBar{
+  display:none;padding:8px 16px;
+  background:var(--accentDim);border-top:1px solid rgba(0,230,118,0.15);
+  align-items:center;gap:10px;
+}
+#replyPrev{flex:1;font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#replyPrev strong{color:var(--accent)}
+#cancelReply{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 4px;transition:color 0.15s}
+#cancelReply:hover{color:var(--red)}
+
+/* ── INPUT AREA ── */
+.inp-area{
+  padding:12px 14px;background:var(--surface);
+  border-top:1px solid var(--border);
+  display:flex;gap:8px;align-items:center;
+}
+#emojiToggle{
+  width:40px;height:40px;background:var(--s2);
+  border:1px solid var(--border);border-radius:50%;
+  color:var(--text2);font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all 0.2s;
+}
+#emojiToggle:hover{background:var(--s3);border-color:var(--accent);color:var(--accent)}
+#emojiPanel{
+  display:none;position:absolute;bottom:72px;left:260px;
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:12px;padding:12px;width:284px;
+  box-shadow:var(--shadow-lg);z-index:100;
+  flex-wrap:wrap;gap:4px;animation:fadeIn 0.2s;
+}
+#emojiPanel.open{display:flex}
+#emojiPanel .pe{font-size:22px;cursor:pointer;padding:4px 6px;border-radius:8px;transition:background 0.15s}
+#emojiPanel .pe:hover{background:var(--s3)}
+#msgInput{
+  flex:1;padding:10px 16px;
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:22px;color:var(--text);
+  font-family:var(--font);font-size:14px;outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+#msgInput:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentDim)}
+#msgInput::placeholder{color:var(--text3)}
+#sendBtn{
+  width:42px;height:42px;
+  background:var(--accent);border:none;border-radius:50%;
+  color:#000;font-size:18px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all 0.2s;
+  box-shadow:0 2px 12px rgba(0,230,118,0.35);
+}
+#sendBtn:hover{background:var(--accent2);transform:scale(1.07);box-shadow:0 4px 18px rgba(0,230,118,0.5)}
+</style>
+</head>
+<body>
+
+<!-- ═══ JOIN SCREEN ═══ -->
+<div id="joinScreen">
+  <div class="jcard">
+    <div class="jlogo">
+      <span class="icon">💬</span>
+      <h1>Chatterbox</h1>
+      <p>Real-time Room Chat</p>
+    </div>
+    <div class="fg">
+      <label>Your Name</label>
+      <input type="text" id="nameInput" placeholder="Enter your name..." maxlength="24" autocomplete="off"/>
+    </div>
+    <div class="fg">
+      <label>Choose Room</label>
+      <select id="roomSelect">
+        <option value="Infosys">🏢 Infosys</option>
+        <option value="Amazon">📦 Amazon</option>
+        <option value="Google">🔍 Google</option>
+        <option value="TCS">💼 TCS</option>
+        <option value="Startup Hub">🚀 Startup Hub</option>
+      </select>
+    </div>
+    <div id="connSt"></div>
+    <div id="jErr">⚠️ Please enter your name!</div>
+    <button id="joinBtn">Enter Chatterbox →</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-top">
+      <div class="sb-brand">💬 Chatterbox</div>
+      <div class="sb-me">
+        <div class="av" id="myAv"></div>
+        <div>
+          <div class="me-n" id="myN"></div>
+          <div class="me-s">Online</div>
+        </div>
+      </div>
+    </div>
+    <div class="sb-room-tag"><span id="sbIcon"></span><span id="sbRoom"></span></div>
+    <div class="sb-sec">Online <span class="sb-cnt" id="olCnt">0</span></div>
+    <div class="ol-list" id="olList"></div>
+    <button id="leaveBtn">🚪 Leave Room</button>
+  </div>
+
+  <!-- CHAT -->
+  <div id="chatArea">
+
+    <div class="chat-hdr">
+      <div class="hdr-icon" id="hdrIcon"></div>
+      <div>
+        <div class="hdr-t" id="hdrT"></div>
+        <div class="hdr-d" id="hdrD"></div>
+      </div>
+      <div class="hdr-online" id="hdrOnline">0 online</div>
+    </div>
+
+    <!-- Big welcome banner (your own join) -->
+    <div id="welcomeBanner"></div>
+    <!-- Small banner (others joining) -->
+    <div id="joinBanner"></div>
+
+    <div id="msgs">
+      <div id="msgs-inner">
+        <div class="datediv"><span>Today</span></div>
+      </div>
+    </div>
+
+    <!-- Typing indicator — always rendered, shows all typers -->
+    <div id="typingBar"></div>
+
+    <div id="replyBar">
+      <span id="replyPrev"></span>
+      <button id="cancelReply">✕</button>
+    </div>
+
+    <div class="inp-area" style="position:relative;">
+      <button id="emojiToggle" title="Emoji">😊</button>
+      <div id="emojiPanel"></div>
+      <input type="text" id="msgInput" placeholder="Type a message..." autocomplete="off"/>
+      <button id="sendBtn">➤</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Context menu -->
+<div id="ctxMenu">
+  <div class="ci" id="ctxReply"><span class="ci-icon">↩️</span> Reply</div>
+  <div class="ci" id="ctxReact"><span class="ci-icon">😊</span> React</div>
+  <div class="ci" id="ctxCopy"><span class="ci-icon">📋</span> Copy</div>
+</div>
+
+<script>
+/* ════════════════════════
+   CONFIG
+════════════════════════ */
+var WS_URL = "ws://localhost:4000/ws";
+
+var ROOM_META = {
+  "Infosys":    {icon:"🏢", desc:"Infosys team discussions"},
+  "Amazon":     {icon:"📦", desc:"Amazon engineers & ops"},
+  "Google":     {icon:"🔍", desc:"Google workspace chat"},
+  "TCS":        {icon:"💼", desc:"TCS project coordination"},
+  "Startup Hub":{icon:"🚀", desc:"Founders & builders"}
+};
+
+var PANEL_EMOJIS = ["😀","😂","😍","🥰","😎","😢","😮","🤔","👍","👎","❤️","🔥","🎉","✅","💯","🙏","😅","🤣","😊","😭","👏","🚀","💪","🤝","⚡","💡","🎯","📌"];
+var REACT_EMOJIS  = ["👍","❤️","😂","🔥","😮","👏","😢","🎉"];
+
+/* ════════════════════════
+   STATE
+════════════════════════ */
+var ws=null, myName="", myRoom="";
+var replyingTo=null;
+var isTyping=false, typingTimer=null;   // sending typing events to server
+var typingUsers={};                     // { username: timerId } — everyone currently typing
+var msgIdCtr=0, rxnState={}, ctxTarget=null;
+
+/* ════════════════════════
+   INIT
+════════════════════════ */
+window.addEventListener("DOMContentLoaded", function(){
+  document.getElementById("joinBtn").addEventListener("click", doJoin);
+  document.getElementById("nameInput").addEventListener("keydown", function(e){ if(e.key==="Enter") doJoin(); });
+  document.getElementById("sendBtn").addEventListener("click", sendMsg);
+  document.getElementById("msgInput").addEventListener("keydown", function(e){ if(e.key==="Enter") sendMsg(); });
+  document.getElementById("msgInput").addEventListener("input", onType);
+  document.getElementById("leaveBtn").addEventListener("click", doLeave);
+  document.getElementById("cancelReply").addEventListener("click", cancelReply);
+
+  document.getElementById("emojiToggle").addEventListener("click", function(e){
+    e.stopPropagation();
+    document.getElementById("emojiPanel").classList.toggle("open");
+  });
+
+  // Build emoji panel
+  var ep = document.getElementById("emojiPanel");
+  PANEL_EMOJIS.forEach(function(em){
+    var s = document.createElement("span"); s.className="pe"; s.textContent=em;
+    s.addEventListener("click", function(){
+      var inp = document.getElementById("msgInput");
+      inp.value += em; inp.focus();
+      document.getElementById("emojiPanel").classList.remove("open");
+    });
+    ep.appendChild(s);
+  });
+
+  document.getElementById("ctxReply").addEventListener("click", function(){
+    if(ctxTarget) startReply(ctxTarget.sender, ctxTarget.text, ctxTarget.msgId);
+    closeCtx();
+  });
+  document.getElementById("ctxReact").addEventListener("click", function(){
+    if(ctxTarget){ var el=document.getElementById("pk-"+ctxTarget.msgId); if(el) el.classList.toggle("open"); }
+    closeCtx();
+  });
+  document.getElementById("ctxCopy").addEventListener("click", function(){
+    if(ctxTarget) navigator.clipboard.writeText(ctxTarget.text).catch(function(){});
+    closeCtx();
+  });
+
+  document.addEventListener("click", function(e){
+    if(!e.target.closest(".bubble")) document.querySelectorAll(".epick.open").forEach(function(p){ p.classList.remove("open"); });
+    if(!e.target.closest("#emojiPanel") && !e.target.closest("#emojiToggle")) document.getElementById("emojiPanel").classList.remove("open");
+    if(!e.target.closest("#ctxMenu")) closeCtx();
+  });
+});
+
+/* ════════════════════════
+   JOIN
+════════════════════════ */
+function doJoin(){
+  var name = document.getElementById("nameInput").value.trim();
+  var room = document.getElementById("roomSelect").value;
+  if(!name){ document.getElementById("jErr").style.display="block"; document.getElementById("nameInput").focus(); return; }
+  document.getElementById("jErr").style.display="none";
+  myName=name; myRoom=room;
+  document.getElementById("joinBtn").disabled=true;
+  setSt("connecting","🔄 Connecting...");
+  connectWS();
+}
+
+function connectWS(){
+  try{ ws=new WebSocket(WS_URL); }
+  catch(e){ setSt("error","❌ Run: python m.py"); document.getElementById("joinBtn").disabled=false; return; }
+
+  ws.onopen = function(){
+    setSt("connected","✅ Connected!");
+    ws.send(JSON.stringify({type:"join", username:myName, room:myRoom}));
+    setTimeout(function(){
+      document.getElementById("joinScreen").style.display="none";
+      document.getElementById("app").style.display="flex";
+      document.getElementById("myAv").textContent = myName.charAt(0).toUpperCase();
+      document.getElementById("myN").textContent  = myName;
+      var m = ROOM_META[myRoom]||{icon:"💬",desc:""};
+      document.getElementById("sbIcon").textContent  = m.icon;
+      document.getElementById("sbRoom").textContent  = myRoom;
+      document.getElementById("hdrIcon").textContent = m.icon;
+      document.getElementById("hdrT").textContent    = myRoom;
+      document.getElementById("hdrD").textContent    = m.desc;
+      showWelcomeBanner(myName, myRoom, m.icon);
+      document.getElementById("msgInput").focus();
+    }, 300);
+  };
+
+  ws.onmessage = function(e){ handleMsg(JSON.parse(e.data)); };
+
+  ws.onclose = function(){
+    if(document.getElementById("app").style.display==="flex"){
+      appendSys("⚠️ Reconnecting..."); setTimeout(connectWS, 2500);
+    } else { setSt("error","❌ Disconnected."); document.getElementById("joinBtn").disabled=false; }
+  };
+
+  ws.onerror = function(){ setSt("error","❌ Cannot reach server. Run: python m.py"); document.getElementById("joinBtn").disabled=false; };
+}
+
+function setSt(cls,msg){ var e=document.getElementById("connSt"); e.style.display="block"; e.className=cls; e.textContent=msg; }
+
+/* ════════════════════════
+   HANDLE SERVER MESSAGES
+════════════════════════ */
+function handleMsg(data){
+  switch(data.type){
+
+    case "chat":
+      var isSelf = (data.user === myName);
+      appendBubble(isSelf?"self":"other", data.user, data.message, data.id, data.reply||null);
+      // Remove typing indicator for whoever just sent
+      removeTyping(data.user);
+      if(!isSelf && ws && ws.readyState===WebSocket.OPEN)
+        ws.send(JSON.stringify({type:"seen", msgId:data.id}));
+      break;
+
+    case "system":
+      appendSys(data.message);
+      break;
+
+    case "joined":
+      if(data.username !== myName){
+        showJoinBanner(data.username, data.room);
+        appendSys("👋 "+data.username+" joined #"+data.room);
+      }
+      break;
+
+    case "left":
+      removeTyping(data.username);
+      appendSys("👋 "+data.username+" left #"+data.room);
+      break;
+
+    /*
+     * TYPING — server broadcasts to ALL users in room (including sender).
+     * We display for everyone EXCEPT ourselves (we show our own via onType).
+     * But we DO show it for everyone else, including in different tabs.
+     */
+    case "typing":
+      if(data.user && data.user !== myName){
+        addTyping(data.user);
+      }
+      break;
+
+    case "stop_typing":
+      if(data.user){
+        removeTyping(data.user);
+      }
+      break;
+
+    case "online":
+      renderOnline(data.users||[]);
+      break;
+
+    case "react":
+      applyRxn(data.msgId, data.emoji, data.user===myName);
+      break;
+
+    case "seen":
+      markSeen(data.msgId);
+      break;
+  }
+}
+
+/* ════════════════════════
+   WELCOME BANNER
+════════════════════════ */
+function showWelcomeBanner(name, room, icon){
+  var b = document.getElementById("welcomeBanner");
+  b.innerHTML =
+    '<span class="wb-emoji">'+icon+'</span>'+
+    '<div class="wb-name">Welcome, '+esc(name)+'!</div>'+
+    '<div class="wb-room">You joined <strong>#'+esc(room)+'</strong> · Say hello to everyone 👋</div>'+
+    '<div class="wb-dismiss" id="wbDismiss">Dismiss</div>';
+  b.style.display="block";
+  document.getElementById("wbDismiss").addEventListener("click", function(){ b.style.display="none"; });
+  clearTimeout(showWelcomeBanner._t);
+  showWelcomeBanner._t = setTimeout(function(){ b.style.display="none"; }, 8000);
+}
+
+function showJoinBanner(username, room){
+  var b = document.getElementById("joinBanner");
+  b.innerHTML =
+    '<div class="jb-big">👋 '+esc(username)+' joined the room!</div>'+
+    '<div class="jb-sub">Say hello</div>';
+  b.style.display="block";
+  clearTimeout(showJoinBanner._t);
+  showJoinBanner._t = setTimeout(function(){ b.style.display="none"; }, 3500);
+}
+
+/* ════════════════════════
+   ONLINE LIST
+════════════════════════ */
+function renderOnline(users){
+  document.getElementById("olCnt").textContent     = users.length;
+  document.getElementById("hdrOnline").textContent = users.length+" online";
+  var list = document.getElementById("olList");
+  list.innerHTML="";
+  users.forEach(function(name){
+    var div=document.createElement("div"); div.className="ou";
+    div.innerHTML=
+      '<div class="ou-av">'+name.charAt(0).toUpperCase()+'</div>'+
+      '<div class="ou-info">'+
+        '<div class="ou-n">'+esc(name)+'</div>'+
+        (name===myName?'<div class="ou-you">You</div>':'')+
+      '</div>';
+    list.appendChild(div);
+  });
+}
+
+/* ════════════════════════
+   SEND MESSAGE
+════════════════════════ */
+function sendMsg(){
+  var input = document.getElementById("msgInput");
+  var text  = input.value.trim();
+  if(!text || !ws || ws.readyState!==WebSocket.OPEN) return;
+  var payload = {type:"chat", message:text};
+  if(replyingTo) payload.reply = replyingTo;
+  ws.send(JSON.stringify(payload));
+  // Stop typing signal
+  clearTimeout(typingTimer);
+  if(isTyping){ isTyping=false; ws.send(JSON.stringify({type:"stop_typing"})); }
+  // Remove our own typing indicator
+  removeTyping(myName);
+  input.value=""; cancelReply(); input.focus();
+}
+
+/* ════════════════════════
+   TYPING HANDLER
+   — Shows indicator in YOUR OWN TAB immediately
+   — Also broadcasts to others via server
+════════════════════════ */
+function onType(){
+  if(!ws || ws.readyState!==WebSocket.OPEN) return;
+
+  // Show typing for yourself in your own tab right away
+  addTyping(myName);
+
+  // Broadcast to others
+  if(!isTyping){
+    isTyping=true;
+    ws.send(JSON.stringify({type:"typing"}));
+  }
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(function(){
+    isTyping=false;
+    removeTyping(myName);
+    if(ws && ws.readyState===WebSocket.OPEN)
+      ws.send(JSON.stringify({type:"stop_typing"}));
+  }, 1500);
+}
+
+/* ════════════════════════
+   TYPING INDICATOR STATE
+   typingUsers = { username: autoRemoveTimerId }
+   Everyone's typing shows in the bar
+════════════════════════ */
+function addTyping(name){
+  // Clear existing auto-remove timer
+  if(typingUsers[name]) clearTimeout(typingUsers[name]);
+  // Set auto-remove after 4s (in case stop_typing is missed)
+  typingUsers[name] = setTimeout(function(){ removeTyping(name); }, 4000);
+  renderTypingBar();
+}
+
+function removeTyping(name){
+  if(typingUsers[name]){
+    clearTimeout(typingUsers[name]);
+    delete typingUsers[name];
+    renderTypingBar();
+  }
+}
+
+function renderTypingBar(){
+  var bar   = document.getElementById("typingBar");
+  var names = Object.keys(typingUsers);
+
+  if(names.length === 0){
+    bar.innerHTML = "";
+    return;
+  }
+
+  // Build label: distinguish "You" from others
+  var displayNames = names.map(function(n){ return n===myName ? "You" : esc(n); });
+  var label;
+  if(displayNames.length === 1){
+    label = "<strong>"+displayNames[0]+"</strong> "+( names[0]===myName ? "are" : "is" )+" typing...";
+  } else if(displayNames.length === 2){
+    label = "<strong>"+displayNames[0]+"</strong> and <strong>"+displayNames[1]+"</strong> are typing...";
+  } else {
+    label = "<strong>"+displayNames.slice(0,-1).join(", ")+"</strong> and <strong>"+displayNames[displayNames.length-1]+"</strong> are typing...";
+  }
+
+  bar.innerHTML =
+    '<div class="typing-bubble">'+
+      '<div class="dots"><span></span><span></span><span></span></div>'+
+      '<span class="typing-name">'+label+'</span>'+
+    '</div>';
+}
+
+/* ════════════════════════
+   REPLY
+════════════════════════ */
+function startReply(sender,text,id){
+  replyingTo={sender:sender,text:text,id:id};
+  document.getElementById("replyBar").style.display="flex";
+  document.getElementById("replyPrev").innerHTML='<strong>↩ '+esc(sender)+':</strong> '+esc(text.substring(0,60))+(text.length>60?"…":"");
+  document.getElementById("msgInput").focus();
+}
+function cancelReply(){ replyingTo=null; document.getElementById("replyBar").style.display="none"; }
+
+/* ════════════════════════
+   REACTIONS
+════════════════════════ */
+function applyRxn(msgId,emoji,mine){
+  if(!rxnState[msgId]) rxnState[msgId]={};
+  if(!rxnState[msgId][emoji]) rxnState[msgId][emoji]={count:0,mine:false};
+  rxnState[msgId][emoji].count++;
+  if(mine) rxnState[msgId][emoji].mine=true;
+  renderRxns(msgId);
+}
+function renderRxns(msgId){
+  var c=document.getElementById("rxn-"+msgId); if(!c) return;
+  c.innerHTML="";
+  Object.keys(rxnState[msgId]||{}).forEach(function(em){
+    var r=rxnState[msgId][em];
+    var p=document.createElement("div"); p.className="rpill"+(r.mine?" mine":"");
+    p.innerHTML=em+' <span class="cnt">'+r.count+'</span>';
+    p.addEventListener("click",function(){ if(ws&&ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:"react",msgId:msgId,emoji:em})); });
+    c.appendChild(p);
+  });
+}
+
+/* ════════════════════════
+   SEEN TICKS
+════════════════════════ */
+function markSeen(msgId){
+  var el=document.getElementById("ticks-"+msgId);
+  if(el){ el.className="bticks seen"; el.textContent="✓✓"; }
+}
+
+/* ════════════════════════
+   CONTEXT MENU
+════════════════════════ */
+function openCtx(e,msgId,sender,text){
+  e.preventDefault();
+  ctxTarget={msgId:msgId,sender:sender,text:text};
+  var menu=document.getElementById("ctxMenu");
+  menu.style.display="block";
+  var x=e.clientX, y=e.clientY;
+  if(x+170>window.innerWidth) x=window.innerWidth-175;
+  if(y+130>window.innerHeight) y=window.innerHeight-135;
+  menu.style.left=x+"px"; menu.style.top=y+"px";
+}
+function closeCtx(){ document.getElementById("ctxMenu").style.display="none"; ctxTarget=null; }
+
+/* ════════════════════════
+   APPEND MESSAGES
+════════════════════════ */
+function appendSys(text){
+  var w=document.getElementById("msgs-inner");
+  var d=document.createElement("div"); d.className="sysmsg"; d.textContent=text;
+  w.appendChild(d); scrollBot();
+}
+
+function appendBubble(type,sender,text,msgId,reply){
+  if(!msgId) msgId=++msgIdCtr;
+  var w  =document.getElementById("msgs-inner");
+  var row=document.createElement("div"); row.className="mrow "+type;
+
+  if(type==="other"){
+    var sl=document.createElement("div"); sl.className="msender"; sl.textContent=sender;
+    row.appendChild(sl);
+  }
+
+  var bw=document.createElement("div"); bw.className="bwrap";
+  var b =document.createElement("div"); b.className="bubble";
+
+  if(reply){
+    var rp=document.createElement("div"); rp.className="rpreview";
+    rp.innerHTML='<strong>↩ '+esc(reply.sender)+'</strong><br>'+esc(reply.text.substring(0,50));
+    b.appendChild(rp);
+  }
+
+  var mt=document.createElement("div"); mt.textContent=text; b.appendChild(mt);
+
+  var bf=document.createElement("div"); bf.className="bfoot";
+  var bt=document.createElement("span"); bt.className="btime"; bt.textContent=nowTime(); bf.appendChild(bt);
+  if(type==="self"){
+    var tk=document.createElement("span"); tk.className="bticks sent"; tk.id="ticks-"+msgId; tk.textContent="✓"; bf.appendChild(tk);
+  }
+  b.appendChild(bf);
+
+  var ep=document.createElement("div"); ep.className="epick"; ep.id="pk-"+msgId;
+  REACT_EMOJIS.forEach(function(em){
+    var btn=document.createElement("button"); btn.className="eb"; btn.textContent=em;
+    btn.addEventListener("click",function(e){
+      e.stopPropagation(); ep.classList.remove("open");
+      if(ws&&ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:"react",msgId:msgId,emoji:em}));
+    });
+    ep.appendChild(btn);
+  });
+  b.appendChild(ep);
+
+  b.addEventListener("click",function(e){
+    if(e.target.closest(".eb")) return;
+    document.querySelectorAll(".epick.open").forEach(function(p){ if(p!==ep) p.classList.remove("open"); });
+    ep.classList.toggle("open");
+  });
+  b.addEventListener("contextmenu",function(e){ openCtx(e,msgId,sender,text); });
+  b.addEventListener("dblclick",function(e){ e.preventDefault(); ep.classList.remove("open"); startReply(sender,text,msgId); });
+
+  bw.appendChild(b);
+  row.appendChild(bw);
+
+  var rxn=document.createElement("div"); rxn.className="rxns"; rxn.id="rxn-"+msgId;
+  row.appendChild(rxn);
+
+  w.appendChild(row); scrollBot();
+}
+
+/* ════════════════════════
+   LEAVE
+════════════════════════ */
+function doLeave(){
+  if(ws&&ws.readyState===WebSocket.OPEN){ ws.send(JSON.stringify({type:"leave"})); ws.close(); }
+  setTimeout(function(){
+    document.getElementById("app").style.display="none";
+    document.getElementById("joinScreen").style.display="flex";
+    document.getElementById("welcomeBanner").style.display="none";
+    document.getElementById("joinBanner").style.display="none";
+    document.getElementById("connSt").style.display="none";
+    document.getElementById("joinBtn").disabled=false;
+    document.getElementById("nameInput").value=myName;
+    document.getElementById("msgs-inner").innerHTML='<div class="datediv"><span>Today</span></div>';
+    document.getElementById("typingBar").innerHTML="";
+    cancelReply();
+    isTyping=false; typingUsers={}; rxnState={};
+  }, 400);
+}
+
+/* ════════════════════════
+   HELPERS
+════════════════════════ */
+function scrollBot(){ var m=document.getElementById("msgs"); m.scrollTop=m.scrollHeight; }
+function nowTime(){ var d=new Date(),h=d.getHours(),mi=d.getMinutes(),ap=h>=12?"PM":"AM"; h=h%12||12; return h+":"+(mi<10?"0":"")+mi+" "+ap; }
+function esc(s){ var d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+</script>
+</body>
+</html>
