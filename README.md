@@ -53,23 +53,4 @@ It allows multiple users to join chat rooms and communicate instantly.
 
 ![Online Users](images/online.png)
 
----
 
-## ▶️ Run the Project
-
-```bash
-pip install fastapi uvicorn
-python m.py
-```
-
-Open in browser:
-
-```
-http://localhost:4000
-```
-
----
-
-## 👩‍💻 Author
-
-**Shabana Shaik**
