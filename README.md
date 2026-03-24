@@ -62,7 +62,8 @@ Milestone 4 enhances the application with advanced real-time features such as ty
 
 ### 😊 Message reactions (emojis)
 
-<img src="https://github.com/user-attachments/assets/dc8e4311-e361-4ef7-af5e-c61b36692cab" />
+<img width="1902" height="879" alt="Screenshot 2026-03-24 215405" src="https://github.com/user-attachments/assets/c1393fcb-fd1e-4ee2-8285-933831646fa4" />
+
 
 ### 🔁 Reply to messages
 
